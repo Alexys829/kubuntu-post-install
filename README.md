@@ -1,13 +1,21 @@
-# kubuntu-post-install
+# 🛠️ kubuntu-post-install
 
-Script interattivo di post-installazione per **Kubuntu 24.04 LTS** e **26.04 LTS**.
+> Script interattivo di post-installazione per **Kubuntu 24.04 LTS** e **26.04 LTS**.
 
-Ogni step è documentato, spiegato e **saltabile**. Supporta modalità `--dry-run` per
-vedere cosa verrebbe eseguito senza toccare il sistema.
+Ogni step è documentato, spiegato e **saltabile**. Supporta modalità `--dry-run` per vedere cosa verrebbe eseguito senza toccare il sistema.
 
 ---
 
-## Utilizzo
+## 📋 Requisiti
+
+- Kubuntu 24.04 LTS o 26.04 LTS
+- `bash` (pre-installato)
+- Connessione internet attiva
+- Permessi `sudo`
+
+---
+
+## 🚀 Utilizzo
 
 ```bash
 # Clona la repo
@@ -23,9 +31,10 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## Cosa fa
+## ⚙️ Cosa fa
 
-### Step principali
+### 🔧 Step principali
+
 | Step | Descrizione |
 |------|-------------|
 | STEP 1 | Correggi `/etc/fstab` per SSD (rimuovi `discard`) |
@@ -36,7 +45,8 @@ bash kubuntu-post-install.sh --dry-run
 | STEP 6 | Installa codec, font Microsoft, exFAT |
 | STEP 7 | Supporto DVD/Blu-ray (opzionale) |
 
-### Bonus
+### 🎁 Bonus
+
 | Step | Descrizione |
 |------|-------------|
 | BONUS A | Rimuovi Snap e blocca reinstallazione |
@@ -44,7 +54,8 @@ bash kubuntu-post-install.sh --dry-run
 | BONUS C | Asterischi durante inserimento password sudo |
 | BONUS D | Disabilita cambio utente rapido (KDE) |
 
-### Extra — Virtualizzazione
+### 🖥️ Extra — Virtualizzazione
+
 | Step | Descrizione |
 |------|-------------|
 | EXTRA 1 | Driver GPU proprietari (NVIDIA) |
@@ -57,7 +68,8 @@ bash kubuntu-post-install.sh --dry-run
 | EXTRA 8 | Bridge di rete br0 via Netplan |
 | EXTRA 9 | Preset KVM (Desktop / Developer / Server+Cockpit) |
 
-### Extra — Performance & Sicurezza
+### ⚡ Extra — Performance & Sicurezza
+
 | Step | Descrizione |
 |------|-------------|
 | EXTRA 10 | TLP — ottimizzazione batteria (solo laptop) |
@@ -77,7 +89,7 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## Caratteristiche
+## ✨ Caratteristiche
 
 - ✅ **Interattivo** — ogni step chiede conferma prima di procedere
 - ✅ **Dry-run** — anteprima senza modifiche con `--dry-run`
@@ -88,20 +100,17 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## Note
+## 📝 Note
 
-> **Docker** non è incluso in questo script. Per installare Docker dal repo
-> ufficiale (versioni aggiornate) usa lo script dedicato
-> [docker-linux-installer](https://github.com/Alexys829/docker-linux-installer).
+> **Docker** non è incluso in questo script. Per installare Docker dal repo ufficiale (versioni aggiornate) usa lo script dedicato [docker-linux-installer](https://github.com/Alexys829/docker-linux-installer).
 
 > **TLP** (EXTRA 10) va installato **solo su laptop**. Su desktop è inutile.
 
-> **EXTRA 8 (bridge di rete)** non va eseguito in sessione SSH remota — potrebbe
-> interrompere la connessione.
+> **EXTRA 8 (bridge di rete)** non va eseguito in sessione SSH remota — potrebbe interrompere la connessione.
 
 ---
 
-## Changelog
+## 📦 Changelog
 
 ### v3.3 (2026-04-18)
 - Rimosso EXTRA 4 (Docker via APT): Docker va installato con il dedicato `install_docker.sh`
@@ -109,3 +118,9 @@ bash kubuntu-post-install.sh --dry-run
 
 ### v3.2
 - Versione iniziale pubblica
+
+---
+
+## 📄 License
+
+MIT — fai quello che vuoi con questo script.
