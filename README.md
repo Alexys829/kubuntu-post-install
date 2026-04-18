@@ -1,12 +1,18 @@
 # 🛠️ kubuntu-post-install
 
-> Script interattivo di post-installazione per **Kubuntu 24.04 LTS** e **26.04 LTS**.
+> Stanco di configurare Kubuntu a mano dopo ogni installazione? Questo script automatizza tutto il necessario.
+
+Uno script Bash interattivo per **Kubuntu 24.04 LTS** e **26.04 LTS** che:
+- Ottimizza il sistema (SSD, swap, systemd, GRUB)
+- Installa codec, font e supporto filesystem
+- Configura virtualizzazione KVM/QEMU completa
+- Migliora performance e sicurezza con step opzionali
 
 Ogni step è documentato, spiegato e **saltabile**. Supporta modalità `--dry-run` per vedere cosa verrebbe eseguito senza toccare il sistema.
 
 ---
 
-## 📋 Requisiti
+## 📋 Requirements
 
 - Kubuntu 24.04 LTS o 26.04 LTS
 - `bash` (pre-installato)
@@ -15,13 +21,48 @@ Ogni step è documentato, spiegato e **saltabile**. Supporta modalità `--dry-ru
 
 ---
 
-## 🚀 Utilizzo
+## 🚀 Installation
+
+### One-liner
 
 ```bash
-# Clona la repo
+bash <(curl -fsSL https://raw.githubusercontent.com/Alexys829/kubuntu-post-install/main/kubuntu-post-install.sh)
+```
+
+### Manual (clone the repo)
+
+```bash
 git clone https://github.com/Alexys829/kubuntu-post-install.git
 cd kubuntu-post-install
+bash kubuntu-post-install.sh
+```
 
+> Verrai guidato interattivamente attraverso ogni step. Puoi saltarne uno qualsiasi premendo `n`.
+
+---
+
+## ⚙️ How it works
+
+```
+Avvio script
+      │
+      ▼
+  Step proposto
+      │
+      ├─ Confermi (y)? → esegui → ✅ DONE
+      │
+      ├─ Salti (n)?    → ⏭️ SKIPPED
+      │
+      └─ Dry-run?      → mostra cosa farebbe → 🔍 PREVIEW
+```
+
+Alla fine, lo script mostra un riepilogo con i contatori **DONE / FAILED / SKIPPED** e chiede il riavvio solo se necessario.
+
+---
+
+## 🖥️ Usage
+
+```bash
 # Esecuzione normale (interattiva)
 bash kubuntu-post-install.sh
 
@@ -31,7 +72,7 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## ⚙️ Cosa fa
+## 📋 Steps
 
 ### 🔧 Step principali
 
@@ -89,7 +130,7 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## ✨ Caratteristiche
+## ✨ Features
 
 - ✅ **Interattivo** — ogni step chiede conferma prima di procedere
 - ✅ **Dry-run** — anteprima senza modifiche con `--dry-run`
@@ -100,7 +141,7 @@ bash kubuntu-post-install.sh --dry-run
 
 ---
 
-## 📝 Note
+## 📝 Notes
 
 > **Docker** non è incluso in questo script. Per installare Docker dal repo ufficiale (versioni aggiornate) usa lo script dedicato [docker-linux-installer](https://github.com/Alexys829/docker-linux-installer).
 
