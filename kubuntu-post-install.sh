@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # ============================================================
 #  Kubuntu Post-Install Setup Script v3.3
@@ -65,11 +66,13 @@ ask() {
 ok() {
     echo -e "${GREEN}  ✔ Fatto.${RESET}"
     ((DONE++))
+    log_action "SUCCESS" "$*"
 }
 
 fail() {
     echo -e "${RED}  ✖ Errore durante l'esecuzione.${RESET}"
     ((FAILED++))
+    log_action "FAILED" "$*"
 }
 
 run_cmd() {
@@ -116,6 +119,33 @@ all_pkgs_installed() {
 
 mark_reboot() {
     REBOOT_RECOMMENDED=1
+}
+
+log_action() {
+    local action="$1"
+    local details="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] $action: $details" | sudo tee -a /var/log/kubuntu-post-install.log > /dev/null 2>&1 || true
+}
+
+validate_input() {
+    local input="$1"
+    local name="$2"
+    local pattern="^[a-zA-Z0-9_-]+$"
+    if [[ ! "$input" =~ $pattern ]]; then
+        echo -e "${RED}  ✖ Input '$name' non valido: $input${RESET}"
+        return 1
+    fi
+    return 0
+}
+
+validate_device() {
+    local dev="$1"
+    if [[ ! -b "$dev" ]]; then
+        echo -e "${RED}  ✖ Dispositivo non valido: $dev${RESET}"
+        return 1
+    fi
+    return 0
 }
 
 require_sudo() {
@@ -325,7 +355,7 @@ fi
 if ask "EXTRA 6" "Installa KVM/QEMU" \
 "Installa lo stack base per virtualizzazione con KVM/QEMU, libvirt e
 virt-manager. Aggiunge anche il tuo utente ai gruppi kvm e libvirt."; then
-    cpu_support=$(egrep -c '(vmx|svm)' /proc/cpuinfo 2>/dev/null || echo "0")
+    cpu_support=$(grep -Ec '(vmx|svm)' /proc/cpuinfo 2>/dev/null || echo "0")
     if [[ "$cpu_support" -eq 0 ]]; then
         echo -e "${YELLOW}  ⚠ Virtualizzazione hardware non rilevata o disabilitata nel BIOS/UEFI.${RESET}"
         read -rp "$(echo -e "${BOLD}  Vuoi continuare comunque? [s/N]: ${RESET}")" force_kvm
@@ -383,6 +413,9 @@ Non eseguire questo step in SSH remoto."; then
     echo -e "${CYAN}  → Interfacce di rete disponibili:${RESET}"
     ip -o link show | awk -F': ' '{print "    " $2}' | grep -v lo
     read -rp "$(echo -e "${BOLD}  Inserisci il nome dell'interfaccia fisica: ${RESET}")" NET_IFACE
+    if ! validate_input "$NET_IFACE" "interfaccia"; then
+        ((SKIPPED++)); return 1
+    fi
     if [[ -z "$NET_IFACE" ]]; then
         echo -e "${RED}  → Nessuna interfaccia inserita. Saltato.${RESET}"
         ((SKIPPED++))
@@ -670,6 +703,11 @@ di dominio. I DNS di default dell'ISP sono spesso lenti o poco affidabili.
   • Non sovrascrive la configurazione di NetworkManager/wifi
 Verifica dopo applicazione: resolvectl status"; then
 
+    nm_dns=$(nmcli -t -f NAME,IP4.DNS connection show 2>/dev/null | grep -v '^::' | wc -l)
+    if [[ "$nm_dns" -gt 0 ]]; then
+        echo -e "${YELLOW}  ⚠ Rilevati DNS in NetworkManager. Verifica che non ci sia un override VPN.${RESET}"
+    fi
+
     run_cmd "sudo mkdir -p /etc/systemd/resolved.conf.d" && \
     write_file "/etc/systemd/resolved.conf.d/99-dns.conf" \
 "[Resolve]\nDNS=1.1.1.1 9.9.9.9\nFallbackDNS=1.0.0.1 149.112.112.112\nDNSOverTLS=opportunistic\n" && \
@@ -746,6 +784,12 @@ Verrà creato un backup di /etc/fstab prima di qualsiasi modifica."; then
     if [[ -z "$PART_DEV" ]]; then
         echo -e "${YELLOW}  → Nessun dispositivo inserito. Saltato.${RESET}"; ((SKIPPED++))
     else
+        if ! validate_input "$PART_DEV" "device"; then
+            ((SKIPPED++)); return 1
+        fi
+        if ! validate_device "$PART_DEV"; then
+            ((SKIPPED++)); return 1
+        fi
         PART_UUID=$(blkid -s UUID -o value "$PART_DEV" 2>/dev/null)
         PART_FS=$(blkid -s TYPE -o value "$PART_DEV" 2>/dev/null)
 
