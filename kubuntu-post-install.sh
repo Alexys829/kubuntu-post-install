@@ -29,7 +29,7 @@ FAILED=0
 DRY_RUN=0
 REBOOT_RECOMMENDED=0
 
-if [[ "$1" == "--dry-run" ]]; then
+if [[ "${1:-}" == "--dry-run" ]]; then
     DRY_RUN=1
 fi
 
@@ -413,11 +413,10 @@ Non eseguire questo step in SSH remoto."; then
     echo -e "${CYAN}  → Interfacce di rete disponibili:${RESET}"
     ip -o link show | awk -F': ' '{print "    " $2}' | grep -v lo
     read -rp "$(echo -e "${BOLD}  Inserisci il nome dell'interfaccia fisica: ${RESET}")" NET_IFACE
-    if ! validate_input "$NET_IFACE" "interfaccia"; then
-        ((SKIPPED++)); return 1
-    fi
     if [[ -z "$NET_IFACE" ]]; then
         echo -e "${RED}  → Nessuna interfaccia inserita. Saltato.${RESET}"
+        ((SKIPPED++))
+    elif ! validate_input "$NET_IFACE" "interfaccia"; then
         ((SKIPPED++))
     else
         if ! pkg_installed bridge-utils; then
@@ -783,13 +782,11 @@ Verrà creato un backup di /etc/fstab prima di qualsiasi modifica."; then
 
     if [[ -z "$PART_DEV" ]]; then
         echo -e "${YELLOW}  → Nessun dispositivo inserito. Saltato.${RESET}"; ((SKIPPED++))
+    elif ! validate_input "$PART_DEV" "device"; then
+        ((SKIPPED++))
+    elif ! validate_device "$PART_DEV"; then
+        ((SKIPPED++))
     else
-        if ! validate_input "$PART_DEV" "device"; then
-            ((SKIPPED++)); return 1
-        fi
-        if ! validate_device "$PART_DEV"; then
-            ((SKIPPED++)); return 1
-        fi
         PART_UUID=$(blkid -s UUID -o value "$PART_DEV" 2>/dev/null)
         PART_FS=$(blkid -s TYPE -o value "$PART_DEV" 2>/dev/null)
 
