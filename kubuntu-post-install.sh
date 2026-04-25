@@ -107,6 +107,10 @@ pkg_installed() {
     dpkg -s "$1" >/dev/null 2>&1
 }
 
+pkg_available() {
+    apt-cache show "$1" >/dev/null 2>&1
+}
+
 all_pkgs_installed() {
     local p
     for p in "$@"; do
@@ -168,11 +172,16 @@ if ask "STEP 1" "Correggi /etc/fstab per SSD (rimuovi 'discard')" \
 ma in genere è preferibile usare il timer periodico fstrim.timer.
 Questo step crea un backup di /etc/fstab e sostituisce 'discard' con
 'defaults,noatime' per ridurre scritture inutili su SSD."; then
-    if grep -q '/ext4' /etc/fstab 2>/dev/null; then
-        run_cmd "sudo cp /etc/fstab /etc/fstab.orig" && \
-        run_cmd "sudo sed -i '/ext4/ s/discard/defaults,noatime/' /etc/fstab" && {
-            ok; mark_reboot;
-        } || fail
+    if grep -E '^[^#]*[[:space:]]ext4[[:space:]]' /etc/fstab >/dev/null 2>&1; then
+        if grep -E '^[^#]*[[:space:]]ext4[[:space:]]' /etc/fstab | grep -q discard; then
+            run_cmd "sudo cp /etc/fstab /etc/fstab.orig" && \
+            run_cmd "sudo sed -i '/[[:space:]]ext4[[:space:]]/ s/discard/defaults,noatime/' /etc/fstab" && {
+                ok; mark_reboot;
+            } || fail
+        else
+            echo -e "${YELLOW}  → Nessuna opzione 'discard' trovata sulle righe ext4. Niente da modificare.${RESET}"
+            ((SKIPPED++))
+        fi
     else
         echo -e "${YELLOW}  → Nessuna riga ext4 trovata in /etc/fstab. Saltato.${RESET}"
         ((SKIPPED++))
@@ -232,7 +241,9 @@ esac
 # ── STEP 5 ───────────────────────────────────────────────────
 if ask "STEP 5" "Aggiorna il sistema" \
 "Aggiorna pacchetti Snap e APT, poi rimuove pacchetti orfani e pulisce la cache."; then
-    run_cmd "sudo snap refresh" && \
+    if command -v snap >/dev/null 2>&1; then
+        run_cmd "sudo snap refresh" || true
+    fi
     run_cmd "sudo systemctl daemon-reload" && \
     run_cmd "sudo apt update && sudo apt full-upgrade -y" && \
     run_cmd "sudo apt autopurge -y && sudo apt autoclean" && ok || fail
@@ -301,7 +312,10 @@ fi
 if ask "BONUS D" "Disabilita il cambio utente rapido" \
 "Blocca il fast user switching in KDE. Utile in ambienti condivisi o per
 ridurre l'apertura di sessioni parallele."; then
-    append_file "/usr/share/kubuntu-default-settings/kf5-settings/kdeglobals" "\n[KDE Action Restrictions] [\\$i]\naction/switch_user=false\naction/start_new_session=false\n" && {
+    # Path system-wide standard valido sia per Plasma 5 (KF5) sia per Plasma 6 (KF6)
+    KDEGLOBALS_TARGET="/etc/xdg/kdeglobals"
+    run_cmd "sudo mkdir -p /etc/xdg" && \
+    append_file "$KDEGLOBALS_TARGET" "\n[KDE Action Restrictions][\$i]\naction/switch_user=false\naction/start_new_session=false\n" && {
         ok; mark_reboot;
     } || fail
 fi
@@ -310,6 +324,9 @@ fi
 if ask "EXTRA 1" "Installa driver GPU proprietari" \
 "Installa automaticamente i driver raccomandati per GPU supportate,
 in particolare NVIDIA. Utile per accelerazione video e migliori performance."; then
+    if ! command -v ubuntu-drivers >/dev/null 2>&1; then
+        run_cmd "sudo apt install -y ubuntu-drivers-common" || fail
+    fi
     run_cmd "sudo ubuntu-drivers install" && {
         ok; mark_reboot;
     } || fail
@@ -629,10 +646,26 @@ Il pacchetto 'zram-config' configura zRAM automaticamente all'avvio."; then
     if pkg_installed zram-config || pkg_installed zram-tools; then
         echo -e "${YELLOW}  → zRAM già installato.${RESET}"; ((SKIPPED++))
     else
-        run_cmd "sudo apt install -y zram-config" && {
-            ok; mark_reboot;
-            echo -e "${CYAN}  → Verifica dopo riavvio: zramctl${RESET}"
-        } || fail
+        # Su 26.04 zram-config potrebbe non essere disponibile: fallback su zram-tools
+        if pkg_available zram-config; then
+            ZRAM_PKG="zram-config"
+        elif pkg_available zram-tools; then
+            ZRAM_PKG="zram-tools"
+        else
+            echo -e "${RED}  ✖ Nessun pacchetto zRAM disponibile nei repository.${RESET}"
+            fail
+            ZRAM_PKG=""
+        fi
+        if [[ -n "$ZRAM_PKG" ]]; then
+            run_cmd "sudo apt install -y $ZRAM_PKG" && {
+                ok; mark_reboot;
+                echo -e "${CYAN}  → Pacchetto installato: $ZRAM_PKG${RESET}"
+                echo -e "${CYAN}  → Verifica dopo riavvio: zramctl${RESET}"
+                if [[ "$ZRAM_PKG" == "zram-tools" ]]; then
+                    echo -e "${CYAN}  → Configurazione: /etc/default/zramswap${RESET}"
+                fi
+            } || fail
+        fi
     fi
 fi
 
@@ -647,6 +680,10 @@ in anticipo, riducendo i tempi di avvio.
 
     if pkg_installed preload; then
         echo -e "${YELLOW}  → preload già installato.${RESET}"; ((SKIPPED++))
+    elif ! pkg_available preload; then
+        echo -e "${YELLOW}  → 'preload' non è disponibile nei repository di questa release.${RESET}"
+        echo -e "${YELLOW}    Pacchetto non più mantenuto: su kernel recenti il guadagno è trascurabile. Saltato.${RESET}"
+        ((SKIPPED++))
     else
         run_cmd "sudo apt install -y preload" && \
         run_cmd "sudo systemctl enable --now preload" && ok || fail
