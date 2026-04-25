@@ -59,19 +59,19 @@ ask() {
     read -rp "$(echo -e "${BOLD}Vuoi eseguire questo step? [s/N]: ${RESET}")" answer
     case "$answer" in
         [sS][iI]|[sS]) return 0 ;;
-        *) echo -e "${RED}  → Saltato.${RESET}"; ((SKIPPED++)); return 1 ;;
+        *) echo -e "${RED}  → Saltato.${RESET}"; ((++SKIPPED)); return 1 ;;
     esac
 }
 
 ok() {
     echo -e "${GREEN}  ✔ Fatto.${RESET}"
-    ((DONE++))
+    ((++DONE))
     log_action "SUCCESS" "$*"
 }
 
 fail() {
     echo -e "${RED}  ✖ Errore durante l'esecuzione.${RESET}"
-    ((FAILED++))
+    ((++FAILED))
     log_action "FAILED" "$*"
 }
 
@@ -180,11 +180,11 @@ Questo step crea un backup di /etc/fstab e sostituisce 'discard' con
             } || fail
         else
             echo -e "${YELLOW}  → Nessuna opzione 'discard' trovata sulle righe ext4. Niente da modificare.${RESET}"
-            ((SKIPPED++))
+            ((++SKIPPED))
         fi
     else
         echo -e "${YELLOW}  → Nessuna riga ext4 trovata in /etc/fstab. Saltato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     fi
 fi
 
@@ -235,7 +235,7 @@ case "$grub_choice" in
         run_cmd "sudo update-grub 2>/dev/null" && { ok; mark_reboot; } || fail
         ;;
     *)
-        echo -e "${RED}  → Saltato.${RESET}"; ((SKIPPED++)) ;;
+        echo -e "${RED}  → Saltato.${RESET}"; ((++SKIPPED)) ;;
 esac
 
 # ── STEP 5 ───────────────────────────────────────────────────
@@ -256,7 +256,7 @@ codec multimediali, font compatibili con documenti Office, supporto RAR,
 accelerazione video e strumenti per chiavette/dischi exFAT."; then
     if all_pkgs_installed kubuntu-restricted-extras gstreamer1.0-vaapi libvdpau-va-gl1 rar fonts-crosextra-carlito fonts-crosextra-caladea exfatprogs; then
         echo -e "${YELLOW}  → Pacchetti già installati. Saltato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt update && sudo apt install -y kubuntu-restricted-extras gstreamer1.0-vaapi libvdpau-va-gl1 rar fonts-crosextra-carlito fonts-crosextra-caladea exfatprogs" && ok || fail
     fi
@@ -268,7 +268,7 @@ if ask "STEP 7" "Installa supporto DVD/Blu-ray (opzionale)" \
 Da fare solo se hai un lettore ottico fisico."; then
     if all_pkgs_installed libdvd-pkg; then
         echo -e "${YELLOW}  → libdvd-pkg già installato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt update && sudo apt install -y libdvd-pkg" && \
         run_cmd "sudo dpkg-reconfigure libdvd-pkg" && ok || fail
@@ -293,7 +293,7 @@ if ask "BONUS B" "Abilita Flatpak + Flathub" \
 come repository principale di app desktop."; then
     if all_pkgs_installed flatpak plasma-discover-backend-flatpak; then
         echo -e "${YELLOW}  → Flatpak e backend Discover già installati.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y flatpak plasma-discover-backend-flatpak" && \
         run_cmd "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo" && ok || fail
@@ -350,7 +350,7 @@ if ask "EXTRA 3" "Installa Timeshift" \
 dopo aggiornamenti o modifiche problematiche."; then
     if pkg_installed timeshift; then
         echo -e "${YELLOW}  → Timeshift già installato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y timeshift" && ok || fail
     fi
@@ -362,7 +362,7 @@ if ask "EXTRA 5" "Installa strumenti sviluppo base" \
 per sviluppo, build e automazione."; then
     if all_pkgs_installed git curl wget build-essential python3-pip; then
         echo -e "${YELLOW}  → Strumenti base già installati.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y git curl wget build-essential python3-pip" && ok || fail
     fi
@@ -376,11 +376,11 @@ virt-manager. Aggiunge anche il tuo utente ai gruppi kvm e libvirt."; then
     if [[ "$cpu_support" -eq 0 ]]; then
         echo -e "${YELLOW}  ⚠ Virtualizzazione hardware non rilevata o disabilitata nel BIOS/UEFI.${RESET}"
         read -rp "$(echo -e "${BOLD}  Vuoi continuare comunque? [s/N]: ${RESET}")" force_kvm
-        [[ "$force_kvm" =~ ^[sS]([iI])?$ ]] || { echo -e "${RED}  → Saltato.${RESET}"; ((SKIPPED++)); false; }
+        [[ "$force_kvm" =~ ^[sS]([iI])?$ ]] || { echo -e "${RED}  → Saltato.${RESET}"; ((++SKIPPED)); false; }
     fi
     if all_pkgs_installed qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager cpu-checker; then
         echo -e "${YELLOW}  → Stack KVM/QEMU già installato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt update && sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virtinst virt-manager cpu-checker" && \
         run_cmd "sudo systemctl enable --now libvirtd" && \
@@ -401,7 +401,7 @@ if ask "EXTRA 7" "Installa OVMF/UEFI per VM moderne" \
 e scenari di passthrough o VM moderne."; then
     if pkg_installed ovmf; then
         echo -e "${YELLOW}  → OVMF già installato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y ovmf" && ok || fail
     fi
@@ -413,7 +413,7 @@ if ask "EXTRA 8" "Installa supporto SPICE" \
 clipboard condivisa, resize automatico, migliore integrazione host/guest."; then
     if all_pkgs_installed virt-viewer spice-client-gtk qemu-utils; then
         echo -e "${YELLOW}  → Supporto SPICE già installato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y virt-viewer spice-client-gtk qemu-utils" && {
             ok
@@ -432,9 +432,9 @@ Non eseguire questo step in SSH remoto."; then
     read -rp "$(echo -e "${BOLD}  Inserisci il nome dell'interfaccia fisica: ${RESET}")" NET_IFACE
     if [[ -z "$NET_IFACE" ]]; then
         echo -e "${RED}  → Nessuna interfaccia inserita. Saltato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     elif ! validate_input "$NET_IFACE" "interfaccia"; then
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         if ! pkg_installed bridge-utils; then
             run_cmd "sudo apt install -y bridge-utils" || fail
@@ -451,7 +451,7 @@ Non eseguire questo step in SSH remoto."; then
             } || fail
         else
             echo -e "${YELLOW}  → File scritto ma non applicato. Applica manualmente con: sudo netplan apply${RESET}"
-            ((DONE++))
+            ((++DONE))
         fi
     fi
 fi
@@ -469,7 +469,7 @@ case "$preset_choice" in
     1)
         if all_pkgs_installed adwaita-qt adwaita-icon-theme-full; then
             echo -e "${YELLOW}  → Preset Desktop già presente.${RESET}"
-            ((SKIPPED++))
+            ((++SKIPPED))
         else
             run_cmd "sudo apt install -y adwaita-qt adwaita-icon-theme-full" && ok || fail
         fi
@@ -477,7 +477,7 @@ case "$preset_choice" in
     2)
         if all_pkgs_installed cloud-image-utils libguestfs-tools guestfs-tools; then
             echo -e "${YELLOW}  → Preset Developer già presente.${RESET}"
-            ((SKIPPED++))
+            ((++SKIPPED))
         else
             run_cmd "sudo apt install -y cloud-image-utils libguestfs-tools guestfs-tools" && ok || fail
         fi
@@ -485,7 +485,7 @@ case "$preset_choice" in
     3)
         if all_pkgs_installed cockpit cockpit-machines; then
             echo -e "${YELLOW}  → Preset Server già presente.${RESET}"
-            ((SKIPPED++))
+            ((++SKIPPED))
         else
             run_cmd "sudo apt install -y cockpit cockpit-machines" && \
             run_cmd "sudo systemctl enable --now cockpit.socket" && ok || fail
@@ -493,7 +493,7 @@ case "$preset_choice" in
         ;;
     *)
         echo -e "${RED}  → Saltato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
         ;;
 esac
 
@@ -538,7 +538,7 @@ del sistema e suggerisce ottimizzazioni. Complementare a TLP.
 Utile principalmente su laptop ma informativo anche su desktop."; then
 
     if pkg_installed powertop; then
-        echo -e "${YELLOW}  → powertop già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → powertop già installato.${RESET}"; ((++SKIPPED))
     else
         run_cmd "sudo apt install -y powertop" && {
             ok
@@ -559,7 +559,7 @@ della CPU e applica throttling software prima che l'hardware lo forzi.
 Consigliato su laptop Intel. Su AMD o desktop il beneficio è marginale."; then
 
     if pkg_installed thermald; then
-        echo -e "${YELLOW}  → thermald già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → thermald già installato.${RESET}"; ((++SKIPPED))
     else
         run_cmd "sudo apt install -y thermald" && \
         run_cmd "sudo systemctl enable --now thermald" && ok || fail
@@ -578,7 +578,7 @@ in modo proattivo, prima che il sistema si congeli.
   • Configurabile: soglie, priorità, processi esclusi"; then
 
     if pkg_installed earlyoom; then
-        echo -e "${YELLOW}  → earlyoom già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → earlyoom già installato.${RESET}"; ((++SKIPPED))
     else
         run_cmd "sudo apt install -y earlyoom" && \
         run_cmd "sudo systemctl enable --now earlyoom" && {
@@ -602,7 +602,7 @@ interrupt finiscono sul core 0, creando un collo di bottiglia.
     if pkg_installed irqbalance; then
         run_cmd "sudo systemctl enable --now irqbalance" && {
             echo -e "${YELLOW}  → irqbalance già installato, servizio abilitato.${RESET}"
-            ((DONE++))
+            ((++DONE))
         } || fail
     else
         run_cmd "sudo apt install -y irqbalance" && \
@@ -622,7 +622,7 @@ haveged risolve il problema generando entropia continuamente.
   • Molto utile se usi Docker, SSH, GPG o LUKS"; then
 
     if pkg_installed haveged; then
-        echo -e "${YELLOW}  → haveged già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → haveged già installato.${RESET}"; ((++SKIPPED))
     else
         run_cmd "sudo apt install -y haveged" && \
         run_cmd "sudo systemctl enable --now haveged" && ok || fail
@@ -644,7 +644,7 @@ e tenuti in memoria invece di essere scritti su disco/SSD.
 Il pacchetto 'zram-config' configura zRAM automaticamente all'avvio."; then
 
     if pkg_installed zram-config || pkg_installed zram-tools; then
-        echo -e "${YELLOW}  → zRAM già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → zRAM già installato.${RESET}"; ((++SKIPPED))
     else
         # Su 26.04 zram-config potrebbe non essere disponibile: fallback su zram-tools
         if pkg_available zram-config; then
@@ -679,11 +679,11 @@ in anticipo, riducendo i tempi di avvio.
   • Funziona in background senza configurazione manuale"; then
 
     if pkg_installed preload; then
-        echo -e "${YELLOW}  → preload già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → preload già installato.${RESET}"; ((++SKIPPED))
     elif ! pkg_available preload; then
         echo -e "${YELLOW}  → 'preload' non è disponibile nei repository di questa release.${RESET}"
         echo -e "${YELLOW}    Pacchetto non più mantenuto: su kernel recenti il guadagno è trascurabile. Saltato.${RESET}"
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         run_cmd "sudo apt install -y preload" && \
         run_cmd "sudo systemctl enable --now preload" && ok || fail
@@ -765,7 +765,7 @@ che tentano attacchi brute-force (SSH, FTP, web, ecc.).
 Verrà creata una configurazione base per SSH automaticamente."; then
 
     if pkg_installed fail2ban; then
-        echo -e "${YELLOW}  → fail2ban già installato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → fail2ban già installato.${RESET}"; ((++SKIPPED))
     else
         run_cmd "sudo apt install -y fail2ban" && {
             # Configurazione base SSH
@@ -818,11 +818,11 @@ Verrà creato un backup di /etc/fstab prima di qualsiasi modifica."; then
     read -rp "$(echo -e "${BOLD}  Inserisci il dispositivo da montare (es. /dev/sdb1, lascia vuoto per saltare): ${RESET}")" PART_DEV
 
     if [[ -z "$PART_DEV" ]]; then
-        echo -e "${YELLOW}  → Nessun dispositivo inserito. Saltato.${RESET}"; ((SKIPPED++))
+        echo -e "${YELLOW}  → Nessun dispositivo inserito. Saltato.${RESET}"; ((++SKIPPED))
     elif ! validate_input "$PART_DEV" "device"; then
-        ((SKIPPED++))
+        ((++SKIPPED))
     elif ! validate_device "$PART_DEV"; then
-        ((SKIPPED++))
+        ((++SKIPPED))
     else
         PART_UUID=$(blkid -s UUID -o value "$PART_DEV" 2>/dev/null)
         PART_FS=$(blkid -s TYPE -o value "$PART_DEV" 2>/dev/null)
@@ -861,7 +861,7 @@ Verrà creato un backup di /etc/fstab prima di qualsiasi modifica."; then
             else
                 echo -e "${YELLOW}  → Annullato. Backup fstab rimosso.${RESET}"
                 run_cmd "sudo rm -f /etc/fstab.bak-automount"
-                ((SKIPPED++))
+                ((++SKIPPED))
             fi
         fi
     fi
